@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:synpulse_challenge/models/stock.dart';
+import 'package:synpulse_challenge/screens/stock_search_screen/stock_search_screen.dart';
+import 'api_manager.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/stock_detail_screen/stock_detail_screen.dart';
 import 'screens/login_screen/login_screen.dart';
@@ -33,6 +36,24 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   late String currentScreen;
 
+  void login() async {
+    final tickerList = await tickerListApi();
+    tickerList.forEach((ticker) {
+      tickers.add(
+        Ticker(
+          name: ticker['Name'],
+          prices: [],
+          symbol: ticker['Code'],
+        ),
+      );
+    });
+  }
+
+  void setScreen(String screen) {
+    currentScreen = screen;
+    setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
@@ -45,11 +66,31 @@ class _MainScreenState extends State<MainScreen> {
         return LoginScreen();
       case 'dashboard':
         return SafeArea(
-          child: DashboardScreen(),
+          child: DashboardScreen(
+            setScreen: setScreen,
+          ),
         );
       case 'stock detail':
         return SafeArea(
-          child: StockDetailScreen(),
+          child: StockDetailScreen(
+            setScreen: setScreen,
+            ticker: Ticker(
+              name: 'GameStop',
+              symbol: 'GME',
+              quote: {
+                'change': -50,
+                'change percent': -0.013,
+                'price': 113,
+              },
+            ),
+          ),
+        );
+
+      case 'stock search':
+        return SafeArea(
+          child: StockSearchScreen(
+            setScreen: setScreen,
+          ),
         );
       default:
     }

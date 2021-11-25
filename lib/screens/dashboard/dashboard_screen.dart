@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import '../../widgets/see_all_widget.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
-
+  const DashboardScreen({
+    Key? key,
+    required this.setScreen,
+  }) : super(key: key);
+  final Function setScreen;
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
 }
@@ -20,7 +23,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   'Dashboard',
@@ -28,6 +31,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     color: Colors.black,
                     fontSize: 30,
                     fontWeight: FontWeight.w700,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    widget.setScreen('stock search');
+                  },
+                  icon: Icon(
+                    Icons.search_rounded,
+                    size: 30,
                   ),
                 ),
               ],
