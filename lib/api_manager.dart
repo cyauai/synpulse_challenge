@@ -8,6 +8,8 @@ const stockTimeSeriesFunctionNames = {
   'intraDay': 'TIME_SERIES_INTRADAY',
   'daily': 'TIME_SERIES_DAILY_ADJUSTED',
   'monthly': 'TIME_SERIES_MONTHLY_ADJUSTED',
+  'weekly': 'TIME_SERIES_WEEKLY_ADJUSTED',
+  'all': 'TIME_SERIES_DAILY_ADJUSTED',
 };
 
 // format should be
@@ -18,12 +20,16 @@ const stockTimeSeriesFunctionNames = {
 // }
 Future<dynamic> stockTimeSeriesApi(Map inputData) async {
   var url;
-  if (inputData['function'] == 'TIME_SERIES_INTRADAY') {
+
+  if (inputData['type'] == 'intraday') {
     url = Uri.parse(
-        'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${inputData['symbol']}&interval=${inputData['interval']}&apikey=$APIKEY_VANTAGE');
+        'https://www.alphavantage.co/query?function=${inputData['function']}&symbol=${inputData['symbol']}&interval=${inputData['interval']}&apikey=$APIKEY_VANTAGE');
+  } else if (inputData['type'] == 'all') {
+    url = Uri.parse(
+        'https://www.alphavantage.co/query?function=${inputData['function']}&symbol=${inputData['symbol']}&outputsize=${inputData['outputSize']}&apikey=$APIKEY_VANTAGE');
   } else {
     url = Uri.parse(
-        'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${inputData['symbol']}&apikey=$APIKEY_VANTAGE');
+        'https://www.alphavantage.co/query?function=${inputData['function']}&symbol=${inputData['symbol']}&apikey=$APIKEY_VANTAGE');
   }
   final response = await http.get(url);
   return json.decode(response.body);

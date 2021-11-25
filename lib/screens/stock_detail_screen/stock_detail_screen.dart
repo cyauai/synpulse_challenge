@@ -16,27 +16,74 @@ class StockDetailScreen extends StatefulWidget {
 }
 
 class _StockDetailScreenState extends State<StockDetailScreen> {
-  late Ticker currentTicker;
   late List<Map<dynamic, dynamic>> timeSeriesStatus;
+  late bool isLoading;
   @override
   void initState() {
-    currentTicker = Ticker();
-
     timeSeriesStatus = [
       {
         'name': '1d',
         'isPressed': true,
-        'param': {
-          'function': 'TIME_SERIES_INTRADAY',
-          'interval': '30min',
-        },
-      }
+        'type': 'daily',
+      },
+      {
+        'name': '7d',
+        'isPressed': false,
+        'type': 'weekly',
+      },
+      {
+        'name': '30d',
+        'isPressed': false,
+        'type': 'monthly',
+      },
+      {
+        'name': 'All',
+        'isPressed': false,
+        'type': 'all',
+      },
     ];
+    fetchData();
+    isLoading = true;
     super.initState();
+  }
+
+  void fetchData() async {
+    await getStockTimeSeriesData('daily');
+    isLoading = false;
+  }
+
+  void setTimeSeries(String type) async {
+    isLoading = true;
+    getStockTimeSeriesData(type);
+    timeSeriesStatus = timeSeriesStatus.map((e) {
+      if (e['type'] != type) {
+        e['isPressed'] = false;
+      } else {
+        e['isPressed'] = true;
+      }
+      return e;
+    }).toList();
+    setState(() {});
+  }
+
+  Future getStockTimeSeriesData(String type) async {
+    final response = await stockTimeSeriesApi(
+      {
+        'function': "${stockTimeSeriesFunctionNames['$type']}",
+        "symbol": "${widget.ticker.symbol}",
+        'outputSize': type == 'all' ? 'full' : 'compact',
+        'type': type,
+      },
+    );
+    widget.ticker.prices = Ticker.fromJson(response).prices;
+    isLoading = false;
+    setState(() {});
+    return;
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: 12,
@@ -47,14 +94,18 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
-                onPressed: () {},
+                onPressed: () {
+                  widget.setScreen('dashboard');
+                },
                 icon: Icon(
                   Icons.arrow_back_outlined,
                   size: 30,
                 ),
               ),
               IconButton(
-                onPressed: () {},
+                onPressed: () {
+                  Share.share('www.google.com', subject: 'wtf');
+                },
                 icon: Icon(
                   Icons.share_outlined,
                   size: 30,
@@ -119,9 +170,14 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                     width: 10,
                   ),
                   Container(
-                    color: widget.ticker.quote['change percent']! > 0
-                        ? Colors.green[100]
-                        : Colors.red[100],
+                    decoration: BoxDecoration(
+                      color: widget.ticker.quote['change percent']! > 0
+                          ? Colors.green[100]
+                          : Colors.red[100],
+                      borderRadius: BorderRadius.circular(
+                        5,
+                      ),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
@@ -161,26 +217,76 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
               ),
             ),
           ),
-          // time serires toggle button
-          TimeSeriesButton(
-            function: () {},
-            name: '1d',
-            isPressed: true,
+          SizedBox(
+            height: 10,
           ),
-          _buildDefaultLineChart(currentTicker),
-          TextButton(
-            child: Text("HI"),
-            onPressed: () async {
-              // var url = Uri.parse(
-              //     'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=IBM&interval=5min&apikey=$APIKEY');
-              // var response = await http.get(url);
+          // time serires toggle button
 
-              // currentTicker = Stock.fromJson(json.decode(response.body));
-              // tickerListApi();
-              Share.share('www.google.com', subject: 'wtf');
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              for (final timeSeries in timeSeriesStatus)
+                TimeSeriesButton(
+                  function: () {
+                    setTimeSeries('${timeSeries['type']}');
+                  },
+                  name: timeSeries['name'],
+                  isPressed: timeSeries['isPressed'],
+                ),
+            ],
+          ),
+          SizedBox(
+            height: 10,
+          ),
+          // Graph
+          isLoading
+              ? Container(
+                  height: 300,
+                  child: Center(
+                    child: SizedBox(
+                      height: 40,
+                      width: 40,
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                )
+              : Container(
+                  height: 300,
+                  child: _buildDefaultLineChart(widget.ticker),
+                ),
+          SizedBox(
+            height: 10,
+          ),
+          // Follow button
+          InkWell(
+            onTap: () {
+              widget.ticker.toggleFollow();
               setState(() {});
             },
+            child: Container(
+              alignment: Alignment.center,
+              width: screenSize.width * 0.7,
+              height: 50,
+              decoration: BoxDecoration(
+                border: widget.ticker.followed
+                    ? null
+                    : Border.all(color: Colors.grey[300]!),
+                color: widget.ticker.followed ? Colors.blueGrey : Colors.white,
+                borderRadius: BorderRadius.circular(40),
+              ),
+              child: Text(
+                widget.ticker.followed ? 'Followed' : 'Follow',
+                style: TextStyle(
+                  fontSize: 22,
+                  color:
+                      widget.ticker.followed ? Colors.white : Colors.blueGrey,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
           ),
+
+          // News section
         ],
       ),
     );
@@ -218,24 +324,29 @@ class TimeSeriesButton extends StatelessWidget {
   final Function function;
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isPressed ? Colors.blueGrey : Colors.white,
-        borderRadius: BorderRadius.circular(
-          5,
+    return InkWell(
+      onTap: () {
+        function();
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: isPressed ? Colors.blueGrey : Colors.grey[200],
+          borderRadius: BorderRadius.circular(
+            5,
+          ),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          vertical: 8.0,
-          horizontal: 16,
-        ),
-        child: Text(
-          '$name',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            color: isPressed ? Colors.white : Colors.blueGrey,
-            fontSize: 12,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: 8.0,
+            horizontal: 16,
+          ),
+          child: Text(
+            '$name',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: isPressed ? Colors.white : Colors.blueGrey,
+              fontSize: 12,
+            ),
           ),
         ),
       ),

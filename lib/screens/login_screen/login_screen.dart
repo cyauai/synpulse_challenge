@@ -1,4 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:synpulse_challenge/models/user.dart';
+import 'package:synpulse_challenge/widgets/loading_widget.dart';
 
 import 'pin_widget.dart';
 
@@ -13,9 +16,77 @@ class _LoginScreenState extends State<LoginScreen> {
   final themeColor = Colors.red[300];
   late Size screenSize;
 
+  final TextEditingController _phoneNumberController = TextEditingController();
+  final TextEditingController _smsController = TextEditingController();
+  late String _verificationId;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   @override
   void initState() {
     super.initState();
+  }
+
+  Future signInWithPhoneNumber() async {
+    showLoadingBoxTransparent(context);
+    try {
+      final AuthCredential credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId,
+        smsCode: _smsController.text,
+      );
+      user.id = _verificationId;
+      print(_verificationId);
+
+      await _auth.signInWithCredential(credential);
+      showSnackbar("Successfully signed");
+    } catch (e) {
+      print(e);
+      showSnackbar("Failed to sign in: $e");
+    }
+    Navigator.pop(context);
+  }
+
+  Future _verifyPhoneNumber() async {
+    try {
+      await _auth.verifyPhoneNumber(
+        phoneNumber: '+852${_phoneNumberController.text}',
+        timeout: const Duration(seconds: 60),
+        verificationCompleted: (PhoneAuthCredential phoneAuthCredential) async {
+          await _auth.signInWithCredential(phoneAuthCredential);
+          showSnackbar(
+            "Phone number automatically verified and user signed in: ${_auth.currentUser!.uid}",
+          );
+        },
+        verificationFailed: (FirebaseAuthException authException) {
+          showSnackbar(
+            'Phone number verification failed. Code: ${authException.code}. Message: ${authException.message}',
+          );
+        },
+        codeSent: (String verificationId, int? resendToken) async {
+          showSnackbar(
+            'Please check your phone for the verification code.',
+          );
+          _verificationId = verificationId;
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          showSnackbar(
+            "verification code: $verificationId",
+          );
+          _verificationId = verificationId;
+        },
+      );
+    } catch (e) {
+      showSnackbar(
+        "Failed to Verify Phone Number: $e",
+      );
+    }
+  }
+
+  void showSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+      ),
+    );
   }
 
   @override
@@ -78,6 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: screenSize.width * 0.6,
                           child: TextField(
                             keyboardType: TextInputType.numberWithOptions(),
+                            controller: _phoneNumberController,
                           ),
                         ),
                       ],
@@ -121,24 +193,29 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               // submit / register
-              Container(
-                alignment: Alignment.center,
-                width: 250,
-                height: 60,
-                padding: EdgeInsets.symmetric(
-                  horizontal: 30,
-                ),
-                decoration: BoxDecoration(
-                  color: themeColor,
-                  borderRadius: BorderRadius.circular(
-                    40,
+              InkWell(
+                onTap: () {
+                  _verifyPhoneNumber();
+                },
+                child: Container(
+                  alignment: Alignment.center,
+                  width: 250,
+                  height: 60,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 30,
                   ),
-                ),
-                child: Text(
-                  'Submit',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
+                  decoration: BoxDecoration(
+                    color: themeColor,
+                    borderRadius: BorderRadius.circular(
+                      40,
+                    ),
+                  ),
+                  child: Text(
+                    'Submit',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                    ),
                   ),
                 ),
               ),

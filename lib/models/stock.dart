@@ -60,9 +60,18 @@ class Ticker {
     final symbol = data['Meta Data']['2. Symbol'];
     final interval = data['Meta Data']['4. Interval'];
     final List<Map<String, dynamic>> prices = [];
-    data['Time Series ($interval)'].forEach((time, detail) {
-      prices.add({time: double.parse(detail['1. open'])});
-    });
+
+    if (interval == null) {
+      final key =
+          data.keys.firstWhere((element) => element.contains('Time Series'));
+      data[key].forEach((time, detail) {
+        prices.add({time: double.parse(detail['1. open'])});
+      });
+    } else {
+      data['Time Series ($interval)'].forEach((time, detail) {
+        prices.add({time: double.parse(detail['1. open'])});
+      });
+    }
     return Ticker(name: name, symbol: symbol, prices: prices);
   }
 }

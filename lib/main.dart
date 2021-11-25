@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:synpulse_challenge/models/stock.dart';
 import 'package:synpulse_challenge/screens/stock_search_screen/stock_search_screen.dart';
@@ -7,7 +8,8 @@ import 'screens/stock_detail_screen/stock_detail_screen.dart';
 import 'screens/login_screen/login_screen.dart';
 
 // APIKEY M8EGV7V9H8YDSROH
-void main() {
+void main() async {
+  await Firebase.initializeApp();
   runApp(MyApp());
 }
 
@@ -57,7 +59,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    currentScreen = 'stock detail';
+    currentScreen = 'login';
   }
 
   Widget get _getScreen {
@@ -76,7 +78,7 @@ class _MainScreenState extends State<MainScreen> {
             setScreen: setScreen,
             ticker: Ticker(
               name: 'GameStop',
-              symbol: 'GME',
+              symbol: 'IBM',
               quote: {
                 'change': -50,
                 'change percent': -0.013,
