@@ -48,7 +48,7 @@ class Ticker {
 
   @override
   String toString() {
-    return prices.toString();
+    return symbol;
   }
 
   void toggleFollow() {

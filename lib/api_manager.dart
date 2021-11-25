@@ -46,6 +46,5 @@ Future<dynamic> searchTickerApi(String keyword) async {
   var url = Uri.parse(
       'https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=$keyword&apikey=$APIKEY_VANTAGE');
   final response = await http.get(url);
-  print(json.decode(response.body));
   return json.decode(response.body);
 }

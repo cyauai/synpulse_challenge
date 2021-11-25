@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:synpulse_challenge/api_manager.dart';
 import 'package:synpulse_challenge/models/stock.dart';
+import 'package:yahoofin/yahoofin.dart';
 
 class StockSearchScreen extends StatefulWidget {
   const StockSearchScreen({
@@ -17,25 +18,30 @@ class _StockSearchScreenState extends State<StockSearchScreen> {
   late TextEditingController searchController;
 
   void setFilteredTicker(String text) async {
-    if (text.isEmpty) {
-      filteredTicker = [...tickers];
-    } else {
-      final result = await searchTickerApi(text);
-      final symbols = getMatchesSymbol(result);
-      filteredTicker = getMatchesSymbolTicker(symbols);
-    }
+    // if (text.isEmpty) {
+    //   filteredTicker = [...tickers];
+    // } else {
+    //   final result = await searchTickerApi(text);
+    //   final symbols = getMatchesSymbol(result);
+    //   filteredTicker = getMatchesSymbolTicker(symbols);
+    // }
+
+    final yfin = YahooFin();
+    print(await yfin.checkSymbol('BA'));
+
     setState(() {});
   }
 
   @override
   void initState() {
     super.initState();
-    filteredTicker = [];
+    filteredTicker = tickers;
     searchController = TextEditingController();
   }
 
   @override
   Widget build(BuildContext context) {
+    print(tickers);
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12),
       child: Column(

@@ -9,6 +9,7 @@ import 'screens/login_screen/login_screen.dart';
 
 // APIKEY M8EGV7V9H8YDSROH
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Add this
   await Firebase.initializeApp();
   runApp(MyApp());
 }
@@ -19,9 +20,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
+      title: 'Synpulse Challenge',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.grey,
       ),
       home: MainScreen(),
     );
@@ -40,6 +41,7 @@ class _MainScreenState extends State<MainScreen> {
 
   void login() async {
     final tickerList = await tickerListApi();
+    tickers = [];
     tickerList.forEach((ticker) {
       tickers.add(
         Ticker(
@@ -59,13 +61,13 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    currentScreen = 'login';
+    currentScreen = 'dashboard';
   }
 
   Widget get _getScreen {
     switch (currentScreen) {
       case 'login':
-        return LoginScreen();
+        return LoginScreen(login: login);
       case 'dashboard':
         return SafeArea(
           child: DashboardScreen(
@@ -102,8 +104,14 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        child: _getScreen,
+      resizeToAvoidBottomInset: false,
+      body: GestureDetector(
+        onTap: () {
+          FocusScope.of(context).unfocus();
+        },
+        child: Container(
+          child: _getScreen,
+        ),
       ),
     );
   }
