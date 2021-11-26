@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:synpulse_challenge/api_manager.dart';
 import 'package:synpulse_challenge/models/stock.dart';
-import 'package:yahoofin/yahoofin.dart';
+import 'package:synpulse_challenge/widgets/message_box.dart';
 
 class StockSearchScreen extends StatefulWidget {
   const StockSearchScreen({
     Key? key,
+    required this.setTicker,
     required this.setScreen,
   }) : super(key: key);
   final Function setScreen;
+  final Function setTicker;
   @override
   _StockSearchScreenState createState() => _StockSearchScreenState();
 }
@@ -18,18 +20,20 @@ class _StockSearchScreenState extends State<StockSearchScreen> {
   late TextEditingController searchController;
 
   void setFilteredTicker(String text) async {
-    // if (text.isEmpty) {
-    //   filteredTicker = [...tickers];
-    // } else {
-    //   final result = await searchTickerApi(text);
-    //   final symbols = getMatchesSymbol(result);
-    //   filteredTicker = getMatchesSymbolTicker(symbols);
-    // }
-
-    final yfin = YahooFin();
-    print(await yfin.checkSymbol('BA'));
+    if (text.isEmpty) {
+      filteredTicker = [...tickers];
+    } else {
+      final result = await searchTickerApi(text);
+      final symbols = getMatchesSymbol(result);
+      filteredTicker = getMatchesSymbolTicker(symbols);
+    }
 
     setState(() {});
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override
@@ -41,7 +45,6 @@ class _StockSearchScreenState extends State<StockSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print(tickers);
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12),
       child: Column(
@@ -113,8 +116,14 @@ class _StockSearchScreenState extends State<StockSearchScreen> {
                     crossAxisCount: 2, childAspectRatio: 1.0),
                 children: <Widget>[
                   for (Ticker ticker in filteredTicker)
-                    TickerWidget(
-                      ticker: ticker,
+                    InkWell(
+                      onTap: () {
+                        widget.setScreen('stock detail');
+                        widget.setTicker(ticker.symbol);
+                      },
+                      child: TickerWidget(
+                        ticker: ticker,
+                      ),
                     ),
                 ],
               ),
@@ -191,20 +200,35 @@ class _TickerWidgetState extends State<TickerWidget> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            '${widget.ticker.name}',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.w700,
+          if (widget.ticker.logoUrl.isNotEmpty)
+            CircleAvatar(
+              radius: 30.0,
+              backgroundImage: NetworkImage('${widget.ticker.logoUrl}'),
+              backgroundColor: Colors.transparent,
+            ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              '${widget.ticker.name}',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           SizedBox(
             height: 20,
           ),
           InkWell(
-            onTap: () {
-              widget.ticker.toggleFollow();
+            onTap: () async {
+              final status = await widget.ticker.toggleFollow();
+              if (status == 'full') {
+                showWarningMsg(
+                  context,
+                  'Because of the API limit\nYou can only choose 5 stock to follow',
+                );
+              }
               setState(() {});
             },
             child: _getFollowButton,

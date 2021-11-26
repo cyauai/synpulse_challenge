@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:share/share.dart';
+import 'package:synpulse_challenge/models/news.dart';
 import 'package:synpulse_challenge/models/stock.dart';
+import 'package:synpulse_challenge/screens/stock_detail_screen/news_widget.dart';
+import 'package:synpulse_challenge/widgets/message_box.dart';
+import 'package:synpulse_challenge/widgets/see_all_widget.dart';
 
 import '../../api_manager.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
@@ -47,37 +51,74 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
     super.initState();
   }
 
+  String get getType {
+    return timeSeriesStatus
+        .firstWhere((element) => element['isPressed'])['type'];
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   void fetchData() async {
     await getStockTimeSeriesData('daily');
+    if (widget.ticker.newsList.isEmpty) {
+      final newsResponse = await tickerNewsApi(widget.ticker.symbol);
+      widget.ticker.newsList = convertNews(newsResponse);
+    }
+    if (widget.ticker.logoUrl.isEmpty) {
+      final detailData = await tickerDetailApi(widget.ticker.symbol);
+      widget.ticker.logoUrl = detailData['logo'];
+      widget.ticker.url = detailData['url'];
+    }
     isLoading = false;
+    setState(() {});
   }
 
   void setTimeSeries(String type) async {
-    isLoading = true;
-    getStockTimeSeriesData(type);
-    timeSeriesStatus = timeSeriesStatus.map((e) {
-      if (e['type'] != type) {
-        e['isPressed'] = false;
-      } else {
-        e['isPressed'] = true;
-      }
-      return e;
-    }).toList();
-    setState(() {});
+    try {
+      isLoading = true;
+      getStockTimeSeriesData(type);
+      timeSeriesStatus = timeSeriesStatus.map((e) {
+        if (e['type'] != type) {
+          e['isPressed'] = false;
+        } else {
+          e['isPressed'] = true;
+        }
+        return e;
+      }).toList();
+      setState(() {});
+    } catch (e) {
+      showWarningMsg(context, 'Exceed api calls, please try again later');
+    }
   }
 
   Future getStockTimeSeriesData(String type) async {
-    final response = await stockTimeSeriesApi(
-      {
-        'function': "${stockTimeSeriesFunctionNames['$type']}",
-        "symbol": "${widget.ticker.symbol}",
-        'outputSize': type == 'all' ? 'full' : 'compact',
-        'type': type,
-      },
-    );
-    widget.ticker.prices = Ticker.fromJson(response).prices;
-    isLoading = false;
-    setState(() {});
+    if (!widget.ticker.prices.containsKey(type)) {
+      try {
+        final response = await stockTimeSeriesApi(
+          {
+            'function': "${stockTimeSeriesFunctionNames['$type']}",
+            "symbol": "${widget.ticker.symbol}",
+            'outputSize': type == 'all' ? 'full' : 'compact',
+            'type': type,
+          },
+        );
+        final temp = Ticker.fromJson(response).prices;
+        for (final key in widget.ticker.prices.keys) {
+          temp.putIfAbsent(key, () => widget.ticker.prices[key]!);
+        }
+        widget.ticker.prices = temp;
+        isLoading = false;
+        setState(() {});
+      } catch (e) {
+        showWarningMsg(context, 'Exceed api calls, please try again later');
+      }
+    } else {
+      isLoading = false;
+      setState(() {});
+    }
     return;
   }
 
@@ -104,10 +145,10 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
               ),
               IconButton(
                 onPressed: () {
-                  Share.share('www.google.com', subject: 'wtf');
+                  Share.share('${widget.ticker.url}', subject: '');
                 },
                 icon: Icon(
-                  Icons.share_outlined,
+                  Icons.ios_share,
                   size: 30,
                 ),
               ),
@@ -136,16 +177,26 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
               horizontal: 8.0,
               vertical: 5,
             ),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                '${widget.ticker.name}',
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '${widget.ticker.name}',
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black,
+                    ),
+                  ),
                 ),
-              ),
+                CircleAvatar(
+                  radius: 20.0,
+                  backgroundImage: NetworkImage('${widget.ticker.logoUrl}'),
+                  backgroundColor: Colors.transparent,
+                ),
+              ],
             ),
           ),
           // Ticker quote
@@ -241,7 +292,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
           // Graph
           isLoading
               ? Container(
-                  height: 300,
+                  height: 250,
                   child: Center(
                     child: SizedBox(
                       height: 40,
@@ -251,28 +302,34 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                   ),
                 )
               : Container(
-                  height: 300,
-                  child: _buildDefaultLineChart(widget.ticker),
+                  height: 250,
+                  child: _buildDefaultLineChart(widget.ticker, getType),
                 ),
           SizedBox(
             height: 10,
           ),
           // Follow button
           InkWell(
-            onTap: () {
-              widget.ticker.toggleFollow();
+            onTap: () async {
+              final status = await widget.ticker.toggleFollow();
+              if (status == 'full') {
+                showWarningMsg(
+                  context,
+                  'Because of the API limit\nYou can only choose 5 stock to follow',
+                );
+              }
               setState(() {});
             },
             child: Container(
               alignment: Alignment.center,
-              width: screenSize.width * 0.7,
+              width: screenSize.width * 0.9,
               height: 50,
               decoration: BoxDecoration(
                 border: widget.ticker.followed
                     ? null
                     : Border.all(color: Colors.grey[300]!),
                 color: widget.ticker.followed ? Colors.blueGrey : Colors.white,
-                borderRadius: BorderRadius.circular(40),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 widget.ticker.followed ? 'Followed' : 'Follow',
@@ -285,16 +342,50 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
               ),
             ),
           ),
-
+          SizedBox(
+            height: 10,
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'News',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              SeeAllWidget(
+                function: () {
+                  widget.setScreen('news');
+                },
+              ),
+            ],
+          ),
+          SizedBox(
+            height: 5,
+          ),
           // News section
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  for (final news in widget.ticker.newsList)
+                    TickerNews(
+                      news: news,
+                    ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-Widget _buildDefaultLineChart(Ticker currentTicker) {
-  if (currentTicker.symbol.isEmpty) {
+Widget _buildDefaultLineChart(Ticker currentTicker, String type) {
+  if (currentTicker.prices[type] == null) {
     return Container();
   }
   return SfCartesianChart(
@@ -304,7 +395,7 @@ Widget _buildDefaultLineChart(Ticker currentTicker) {
     series: <LineSeries<Map<String, dynamic>, String>>[
       // Initialize line series.
       LineSeries<Map<String, dynamic>, String>(
-        dataSource: [...currentTicker.prices],
+        dataSource: [...currentTicker.prices[type]!],
         xValueMapper: (Map<String, dynamic> price, _) => price.keys.first,
         yValueMapper: (Map<String, dynamic> price, _) => price.values.first,
       ),

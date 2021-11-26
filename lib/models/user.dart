@@ -1,5 +1,3 @@
-import 'package:synpulse_challenge/models/stock.dart';
-
 late AppUser appUser;
 
 String testId =

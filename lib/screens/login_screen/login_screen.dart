@@ -1,12 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:synpulse_challenge/models/stock.dart';
 import 'package:synpulse_challenge/models/user.dart';
 import 'package:synpulse_challenge/widgets/loading_widget.dart';
-
-import '../../api_manager.dart';
-import 'pin_widget.dart';
 
 late FirebaseFirestore firestore;
 
@@ -39,24 +35,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void login() async {
     firestore = FirebaseFirestore.instance;
-    final doc = FirebaseFirestore.instance.collection('users').doc('$testId');
-    final data = await doc.get();
-    if (data.exists) {
-      appUser = AppUser(id: '$testId');
-      appUser.savedTickerSymbols =
-          data.data()!['savedTickerSymbols'].cast<String>();
-    } else {
-      await doc.set({'savedTickerSymbols': [], 'id': testId});
-    }
-
-    // final doc = FirebaseFirestore.instance.collection('users').doc('${appUser.id}');
+    // final doc = FirebaseFirestore.instance.collection('users').doc('$testId');
     // final data = await doc.get();
     // if (data.exists) {
+    //   appUser = AppUser(id: '$testId');
     //   appUser.savedTickerSymbols =
     //       data.data()!['savedTickerSymbols'].cast<String>();
     // } else {
-    //   await doc.set({'savedTickerSymbols': [], 'id': appUser.id});
+    //   await doc.set({'savedTickerSymbols': [], 'id': testId});
     // }
+
+    final doc =
+        FirebaseFirestore.instance.collection('users').doc('${appUser.id}');
+    final data = await doc.get();
+    if (data.exists) {
+      appUser.savedTickerSymbols =
+          data.data()!['savedTickerSymbols'].cast<String>();
+    } else {
+      await doc.set({'savedTickerSymbols': [], 'id': appUser.id});
+    }
 
     widget.login();
   }
@@ -69,9 +66,10 @@ class _LoginScreenState extends State<LoginScreen> {
         smsCode: _smsController.text,
       );
 
-      await _auth.signInWithCredential(credential);
+      final user = await _auth.signInWithCredential(credential);
       showSnackbar("Successfully signed");
-      appUser = AppUser(id: _verificationId);
+      appUser = AppUser(id: user.user!.uid);
+      login();
     } catch (e) {
       print(e);
       showSnackbar("Failed to sign in: $e");
@@ -196,38 +194,40 @@ class _LoginScreenState extends State<LoginScreen> {
               //   setPin: () {},
               // ),
             ),
-
-            // login option
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Already have an account?',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 16,
-                    ),
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  InkWell(
-                    onTap: () {
-                      login();
-                    },
-                    child: Text(
-                      'Sign In',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            SizedBox(
+              height: 30,
             ),
+            // login option
+            // Expanded(
+            //   child: Column(
+            //     mainAxisAlignment: MainAxisAlignment.center,
+            //     children: [
+            //       Text(
+            //         'Already have an account?',
+            //         style: TextStyle(
+            //           color: Colors.grey[600],
+            //           fontSize: 16,
+            //         ),
+            //       ),
+            //       SizedBox(
+            //         height: 20,
+            //       ),
+            //       InkWell(
+            //         onTap: () {
+            //           login();
+            //         },
+            //         child: Text(
+            //           'Sign In',
+            //           style: TextStyle(
+            //             color: Colors.grey[600],
+            //             fontSize: 16,
+            //             fontWeight: FontWeight.w700,
+            //           ),
+            //         ),
+            //       ),
+            //     ],
+            //   ),
+            // ),
 
             // submit / register
             InkWell(
@@ -332,37 +332,40 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
 
             // login option
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Already have an account?',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 16,
-                    ),
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  InkWell(
-                    onTap: () {
-                      login();
-                    },
-                    child: Text(
-                      'Sign In',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // Expanded(
+            //   child: Column(
+            //     mainAxisAlignment: MainAxisAlignment.center,
+            //     children: [
+            //       Text(
+            //         'Already have an account?',
+            //         style: TextStyle(
+            //           color: Colors.grey[600],
+            //           fontSize: 16,
+            //         ),
+            //       ),
+            //       SizedBox(
+            //         height: 20,
+            //       ),
+            //       InkWell(
+            //         onTap: () {
+            //           login();
+            //         },
+            //         child: Text(
+            //           'Sign In',
+            //           style: TextStyle(
+            //             color: Colors.grey[600],
+            //             fontSize: 16,
+            //             fontWeight: FontWeight.w700,
+            //           ),
+            //         ),
+            //       ),
+            //     ],
+            //   ),
+            // ),
 
+            SizedBox(
+              height: 30,
+            ),
             // submit / register
             InkWell(
               onTap: () {
