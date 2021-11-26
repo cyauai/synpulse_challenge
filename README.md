@@ -30,9 +30,11 @@
 </aside>
 
 1. open the synpulse_challenge/iOS/Runner.xcworkspace with xcode
-2. Go to TARGETS > Signing & Capabilities > sign in a team
-3. connect the computer with the iOS device
-4. run and wait until the build finish
+2. follow this to add the GoogleService-Info.plist (inside the synpulse_challenge directory) into the Xcode [https://stackoverflow.com/questions/31786362/how-to-add-plist-file-to-all-targets-in-xcode](https://stackoverflow.com/questions/31786362/how-to-add-plist-file-to-all-targets-in-xcode)
+3. if there is already a GoogleService-Info.plist and the file is in red color, just remove it
+4. Go to TARGETS > Signing & Capabilities > sign in a team
+5. connect the computer with the iOS device
+6. run and wait until the build finish
 
 ### Running on Emulator
 
