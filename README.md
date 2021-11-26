@@ -5,7 +5,11 @@
 1. git clone [https://github.com/cyauai/synpulse_challenge.git](https://github.com/cyauai/synpulse_challenge.git) (In terminal)
 2. install flutter
 3. navigate to the directory that contains the synpulse_challenge file that cloned from git
-4. flutter create synpulse_challenge (In terminal)
+4. flutter create --org com.cyauai synpulse_challenge (In terminal)
+5. cd synpulse_challenge
+6. flutter pub get
+7. cd ios
+8. pod install
 
 ### Running on Android (Real Device)
 
