@@ -1,5 +1,10 @@
 # Synpulse
 
+## Demo Video
+
+[https://youtu.be/Cy-dqc5KiyA](https://youtu.be/Cy-dqc5KiyA)
+
+
 ## Guide to run the application
 
 1. git clone [https://github.com/cyauai/synpulse_challenge.git](https://github.com/cyauai/synpulse_challenge.git) (In terminal)
